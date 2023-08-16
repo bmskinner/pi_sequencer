@@ -9,6 +9,8 @@ import time
 import cv2
 
 # constants
+MAX_X_POINTS = 20
+UPDATE_INTERVAL_MS = 150
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 480
 CENTER_RECT_SIZE = 100
