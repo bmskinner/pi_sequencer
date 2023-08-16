@@ -11,7 +11,7 @@ import cv2
 
 # constants
 MAX_X_POINTS = 20
-UPDATE_INTERVAL_MS = 150
+UPDATE_INTERVAL_MS = 50
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 480
 CENTER_RECT_SIZE = 100
@@ -43,13 +43,12 @@ def process_camera_image(frame):
 	
 	# Calculate the average HSV values
 	avg_hsv = np.mean(center_rect_hsv, axis=(0, 1))
-	hue, saturation, value = avg_hsv
-	
-	print(f"Average HSV color: Hue = {hue:.2f}, Saturation = {saturation:.2f}, Value = {value:.2f}")
+
+	rawCapture.truncate(0)
 
 	# show the frame
-	cv2.imshow("Frame", center_rect)
-	return hue
+	# cv2.imshow("Frame", center_rect)
+	return avg_hsv
 
 # capture frames from the camera
 def animate(i):
@@ -58,21 +57,22 @@ def animate(i):
 	camera.capture(rawCapture, format="bgr", use_video_port=True)
 
 	# grab the raw NumPy array representing the image
-	# image = frame.array
-	y = process_camera_image(rawCapture)
+	# image = frame.array	
+	avg_hsv = process_camera_image(rawCapture)
 
+	hue, saturation, value = avg_hsv
 
-	data.append((datetime.now(), y))
-	ax.relim()
-	ax.set_ylim(0, 360)
+	data.append((datetime.now(), hue))
+	print(f"Average HSV color: Hue = {hue:.2f}, Saturation = {saturation:.2f}, Value = {value:.2f}")
+
 	ax.set_xlim(data[0][0], data[-1][0])
 	line.set_data(*zip(*data))
 	# clear the stream in preparation for the next frame
-	rawCapture.truncate(0)
 
 
 # Create the empty figure
 fig, ax = plt.subplots()
+ax.set_ylim(0, 360)
 x = datetime.now()
 y = 0
 data = collections.deque([(x, y)], maxlen=MAX_X_POINTS)
