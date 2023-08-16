@@ -87,7 +87,7 @@ def animate(i):
 # Create the empty figure
 fig, ax = plt.subplots()
 x = datetime.now()
-y = read_y_data()
+y = 0
 data = collections.deque([(x, y)], maxlen=MAX_X_POINTS)
 line, = plt.plot(*zip(*data), c='black')
 
