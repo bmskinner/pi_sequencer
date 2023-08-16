@@ -74,12 +74,12 @@ def animate(i):
 	y = process_camera_image(frame)
 
 
-    data.append((datetime.now(), y))
-    ax.relim()
-    ax.set_ylim(-5, 5)
-    ax.set_xlim(data[0][0], data[-1][0])
-    line.set_data(*zip(*data))
-    # clear the stream in preparation for the next frame
+	data.append((datetime.now(), y))
+	ax.relim()
+	ax.set_ylim(-5, 5)
+	ax.set_xlim(data[0][0], data[-1][0])
+	line.set_data(*zip(*data))
+	# clear the stream in preparation for the next frame
 	rawCapture.truncate(0)
 
 
