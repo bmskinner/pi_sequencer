@@ -72,11 +72,11 @@ def process_camera_image(frame):
 def animate(i):
 
 	# capture camera image
-	frame = camera.capture(rawCapture, format="bgr", use_video_port=True)
+	camera.capture(rawCapture, format="bgr", use_video_port=True)
 
 	# grab the raw NumPy array representing the image
 	# image = frame.array
-	y = process_camera_image(frame)
+	y = process_camera_image(rawCapture)
 
 
 	data.append((datetime.now(), y))
