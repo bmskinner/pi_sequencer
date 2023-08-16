@@ -31,8 +31,6 @@ def process_camera_image(frame):
 	# grab the raw NumPy array representing the image
 	image = frame.array
 
-	#image = image.reshape((IMAGE_HEIGHT, IMAGE_WIDTH, 3))
-
 	# Crop the center rectangle
 	center_x = IMAGE_WIDTH // 2
 	center_y = IMAGE_HEIGHT // 2
@@ -54,21 +52,6 @@ def process_camera_image(frame):
 	return hue
 
 # capture frames from the camera
-# for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-
-# while(True):
-
-	
-
-# 	key = cv2.waitKey(1) & 0xFF
-	
-# 	# clear the stream in preparation for the next frame
-# 	rawCapture.truncate(0)
-
-# 	# if the `q` key was pressed, break from the loop
-# 	if key == ord("q"):
-# 		break
-
 def animate(i):
 
 	# capture camera image
@@ -81,7 +64,7 @@ def animate(i):
 
 	data.append((datetime.now(), y))
 	ax.relim()
-	ax.set_ylim(-5, 5)
+	ax.set_ylim(0, 360)
 	ax.set_xlim(data[0][0], data[-1][0])
 	line.set_data(*zip(*data))
 	# clear the stream in preparation for the next frame
