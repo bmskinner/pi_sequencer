@@ -49,16 +49,47 @@ def process_camera_image(frame):
 	return hue
 
 # capture frames from the camera
-for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+# for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+
+# while(True):
+
+	
+
+# 	key = cv2.waitKey(1) & 0xFF
+	
+# 	# clear the stream in preparation for the next frame
+# 	rawCapture.truncate(0)
+
+# 	# if the `q` key was pressed, break from the loop
+# 	if key == ord("q"):
+# 		break
+
+def animate(i):
+
+	# capture camera image
+	frame = camera.capture(rawCapture, format="bgr", use_video_port=True)
+
 	# grab the raw NumPy array representing the image
 	# image = frame.array
-	process_camera_image(frame)
+	y = process_camera_image(frame)
 
-	key = cv2.waitKey(1) & 0xFF
-	
-	# clear the stream in preparation for the next frame
+
+    data.append((datetime.now(), y))
+    ax.relim()
+    ax.set_ylim(-5, 5)
+    ax.set_xlim(data[0][0], data[-1][0])
+    line.set_data(*zip(*data))
+    # clear the stream in preparation for the next frame
 	rawCapture.truncate(0)
 
-	# if the `q` key was pressed, break from the loop
-	if key == ord("q"):
-		break
+
+# Create the empty figure
+fig, ax = plt.subplots()
+x = datetime.now()
+y = read_y_data()
+data = collections.deque([(x, y)], maxlen=MAX_X_POINTS)
+line, = plt.plot(*zip(*data), c='black')
+
+ani = anim.FuncAnimation(fig, animate, interval=UPDATE_INTERVAL_MS)
+plt.show()
+
