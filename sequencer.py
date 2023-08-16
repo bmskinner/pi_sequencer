@@ -1,9 +1,10 @@
 # import the necessary packages
 from picamera.array import PiRGBArray
 from picamera import PiCamera
+import numpy as np
+import matplotlib.pyplot as plt
 import time
 import cv2
-
 
 # constants
 IMAGE_WIDTH = 640
@@ -14,11 +15,18 @@ CENTER_RECT_HALF = CENTER_RECT_SIZE // 2
 # initialize the camera and grab a reference to the raw camera capture
 camera = PiCamera()
 camera.resolution = (IMAGE_WIDTH, IMAGE_HEIGHT)
-camera.framerate = 32
+camera.framerate = 2
 rawCapture = PiRGBArray(camera, size=(IMAGE_WIDTH, IMAGE_HEIGHT))
 
 # allow the camera to warmup
 time.sleep(0.1)
+
+hl, = plt.plot([], [])
+
+def update_line(hl, new_data):
+    hl.set_xdata(numpy.append(hl.get_xdata(), new_data))
+    hl.set_ydata(numpy.append(hl.get_ydata(), new_data))
+    plt.draw()
 
 
 # capture frames from the camera
@@ -29,23 +37,25 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 	#image = image.reshape((IMAGE_HEIGHT, IMAGE_WIDTH, 3))
 
 	# Crop the center rectangle
-    center_x = IMAGE_WIDTH // 2
-    center_y = IMAGE_HEIGHT // 2
-    center_rect = image[center_y - CENTER_RECT_HALF:center_y + CENTER_RECT_HALF,
-                        center_x - CENTER_RECT_HALF:center_x + CENTER_RECT_HALF]
+	center_x = IMAGE_WIDTH // 2
+	center_y = IMAGE_HEIGHT // 2
+	center_rect = image[center_y - CENTER_RECT_HALF:center_y + CENTER_RECT_HALF,
+						center_x - CENTER_RECT_HALF:center_x + CENTER_RECT_HALF]
 
 
-    # Convert to HSV for processing
+	# Convert to HSV for processing
 	center_rect_hsv = cv2.cvtColor(center_rect, cv2.COLOR_BGR2HSV)
-    
-    # Calculate the average HSV values
-    avg_hsv = np.mean(center_rect_hsv, axis=(0, 1))
-    hue, saturation, value = avg_hsv
-    
-    print(f"Average HSV color: Hue = {hue:.2f}, Saturation = {saturation:.2f}, Value = {value:.2f}")
+	
+	# Calculate the average HSV values
+	avg_hsv = np.mean(center_rect_hsv, axis=(0, 1))
+	hue, saturation, value = avg_hsv
+	
+	print(f"Average HSV color: Hue = {hue:.2f}, Saturation = {saturation:.2f}, Value = {value:.2f}")
 
 	# show the frame
-	cv2.imshow("Frame", center_rect_hsv)
+	cv2.imshow("Frame", center_rect)
+
+	update_line(h1, hue)
 
 	key = cv2.waitKey(1) & 0xFF
 	
