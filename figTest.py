@@ -1,3 +1,4 @@
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as anim
@@ -18,7 +19,7 @@ PLOT, = sub.plot([],[])
 def animate(i):
 	xdata = PLOT.get_xdata()
 	ydata = PLOT.get_ydata()
-	newx = np.append(xdata, ((len(xdata)+1)*UPDATE_INTERVAL_MS)/1000 )
+	newx = np.append(xdata, datetime.now())
 	newy = np.append(ydata, read_y_data())
 
 	x_start = len(newx) - MAX_X_POINTS if len(newx) > MAX_X_POINTS else 0
@@ -28,6 +29,7 @@ def animate(i):
 	PLOT.set_data(newx, newy )
 	plt.ylabel('Hue')
 	plt.xlabel('Seconds')
+	plt.show()
 	return PLOT,
 
 ani = anim.FuncAnimation(fig, animate, interval=UPDATE_INTERVAL_MS, blit=False)

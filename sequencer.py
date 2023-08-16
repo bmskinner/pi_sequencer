@@ -21,16 +21,8 @@ rawCapture = PiRGBArray(camera, size=(IMAGE_WIDTH, IMAGE_HEIGHT))
 # allow the camera to warmup
 time.sleep(0.1)
 
-hl, = plt.plot([], [])
-
-def update_line(hl, new_data):
-    hl.set_xdata(numpy.append(hl.get_xdata(), new_data))
-    hl.set_ydata(numpy.append(hl.get_ydata(), new_data))
-    plt.draw()
-
-
-# capture frames from the camera
-for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+# Given an image frame from the camera, detect hue and display
+def process_camera_image(frame):
 	# grab the raw NumPy array representing the image
 	image = frame.array
 
@@ -54,8 +46,13 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 
 	# show the frame
 	cv2.imshow("Frame", center_rect)
+	return hue
 
-	update_line(h1, hue)
+# capture frames from the camera
+for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+	# grab the raw NumPy array representing the image
+	# image = frame.array
+	process_camera_image(frame)
 
 	key = cv2.waitKey(1) & 0xFF
 	
