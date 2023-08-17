@@ -24,6 +24,8 @@ fasta = ""
 fastq = ""
 sequence_number = 1
 
+sequence_history = []
+
 # Blast a given sequence
 def blast(dna):
 	print("Searching for matching DNA...")
@@ -46,8 +48,14 @@ def wait_for_user():
 	key = cv2.waitKey(-1) & 0xFF
 	# if the `q` key was pressed, exit the script
 	if key == ord("q"):
+		cv2.destroyAllWindows()
 		exit()
 	if key == ord("r"):
+		global fasta
+		global fastq
+		global sequence_number
+		global sequence_history
+		sequence_history.append(fasta)
 		fasta = ""
 		fastq = ""
 		sequence_number+=1
@@ -106,8 +114,8 @@ while(True):
 
 	# Update display
 	os.system("clear")
-	print("Measured colour: ", colour_name)
-	print("Detected base  : ", base)
+	print(("Measured colour: "+colour_name).ljust(80)+"| History:")
+	print(("Detected base  : "+base).ljust(80)+"| ------")
 	print("Base quality   : ", qual, "(", QUALITIES[qual], ")")
 	print("")
 	print("Sequence so far:")
