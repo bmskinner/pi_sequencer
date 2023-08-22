@@ -14,10 +14,17 @@ IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 480
 CENTER_RECT_SIZE = 50
 CENTER_RECT_HALF = CENTER_RECT_SIZE // 2
-COL_WIDTH = 50 # width of chart column
-DISPLAY_WIDTH = 55 # width of chart column plus trimmings
+COL_WIDTH = 30 # width of chart column
+DISPLAY_WIDTH = 45 # width of chart column plus trimmings
 
-# Convert colour into DNA base
+# Define the ideal HSV levels for each colour
+RED = [170, 250, 250]
+YELLOW = [30, 90, 250]
+BLUE = [100, 250, 250]
+BLACK = [128, 70, 40]
+COLOURS = {"red":RED, "yellow":YELLOW, "blue":BLUE, "black":BLACK}
+
+# Map colour to DNA base
 BASES = {"red":"A", "blue":"T", "yellow":"C", "black":"G", "?":"N"}
 
 # initialize the camera and grab a reference to the raw camera capture
@@ -33,6 +40,9 @@ time.sleep(1)
 # is different-ish for each colour and can mimic
 # the nanopore wiggle trace
 def transform_hsv(h, s, v):
+	h = h+1
+	s = s+1
+	v = v+1
 	return(math.log(h*s) + math.log(s*v) + math.log(h*v) * math.log(h*s*v))
 
 # Create a text chart element
@@ -44,27 +54,28 @@ def make_col_string(val, width, total_width):
 
 # Create a string for the current values
 def make_display_string(hue, saturation, value):
-	h_length =  math.floor(((hue/180)*COL_WIDTH))
-	s_length =  math.floor(((saturation/255)*COL_WIDTH))
-	v_length =  math.floor(((value/255)*COL_WIDTH))
 	f = transform_hsv(hue, saturation, value)
 	f_length = math.floor((f/255)*COL_WIDTH)
-
-	h_string = make_col_string( hue, h_length, COL_WIDTH ) 
-	s_string = make_col_string(saturation, s_length, COL_WIDTH ) 
-	v_string = make_col_string(value, v_length, COL_WIDTH )
 	f_string = make_col_string(f, f_length, COL_WIDTH) 
-	return("Wiggle: "+f_string)
-	# return("Hue: "+h_string+"Sat: "+s_string+"Val: "+ v_string)
+	return("Wiggle:"+f_string+"\tHue: "+"{:5.0f}".format(hue)+"\tSat: "+"{:5.0f}".format(saturation)+"\tVal: "+ "{:5.0f}".format(value))
 
-# Lookup colour names from HSV
+# Estimate colour names from HSV distance to ideal
 def estimate_colour(hue, saturation, value):
 	colour_name = "?"
-	colour_name = "red" if hue > 150 and saturation > 200 else colour_name
-	colour_name = "blue" if hue < 150 and saturation > 120 and value < 128 else colour_name
-	colour_name = "yellow" if hue < 80 and saturation > 200 else colour_name
-	colour_name = "black" if hue < 50 and saturation > 128 and value < 80 else colour_name
-	return(colour_name)
+
+	# given a colour, calculate the distance from the current values
+	def calc_distance(colour):
+		return(abs(hue-colour[0])+abs(saturation-colour[1])+abs(value-colour[2]))
+
+	dd = 1e4
+	threshold = 40
+
+	for colour in COLOURS:
+		d = calc_distance(COLOURS[colour])
+		dd = d if d<threshold else dd
+		colour_name = colour if d<threshold else colour_name
+
+	return({"name":colour_name, "dist":dd})
 
 
 
@@ -89,14 +100,16 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 	hue, saturation, value = avg_hsv
 
 	# Estimate colour
-	colour_name = estimate_colour(hue, saturation, value)
+	colour_estimate = estimate_colour(hue, saturation, value)
 
+	colour_name = colour_estimate["name"]
+	colour_dist = colour_estimate["dist"]
 	# Get base
 	base = BASES[colour_name]
 
 	# Update chart
 	chart_string = make_display_string(hue, saturation, value)
-	print(chart_string, "Col: ", colour_name.ljust(7), "Base:", base)
+	print(chart_string, "\tDist: ","{:5.1f}".format(colour_dist), "\tCol: ", colour_name.ljust(7), "\tBase:", base)
 
 	# show the image frame
 	cv2.imshow("Frame", center_rect)
