@@ -29,6 +29,12 @@ rawCapture = PiRGBArray(camera, size=(IMAGE_WIDTH, IMAGE_HEIGHT))
 # allow the camera to warmup
 time.sleep(1)
 
+# Given hsv, transform to a single number that
+# is different-ish for each colour and can mimic
+# the nanopore wiggle trace
+def transform_hsv(h, s, v):
+	return(math.log(h*s) + math.log(s*v) + math.log(h*v) * math.log(h*s*v))
+
 # Create a text chart element
 def make_col_string(val, width, total_width):
 	s = "|" + f'{int(val)}'.rjust(3) + " "
@@ -41,10 +47,15 @@ def make_display_string(hue, saturation, value):
 	h_length =  math.floor(((hue/180)*COL_WIDTH))
 	s_length =  math.floor(((saturation/255)*COL_WIDTH))
 	v_length =  math.floor(((value/255)*COL_WIDTH))
+	f = transform_hsv(hue, saturation, value)
+	f_length = math.floor((f/255)*COL_WIDTH)
+
 	h_string = make_col_string( hue, h_length, COL_WIDTH ) 
 	s_string = make_col_string(saturation, s_length, COL_WIDTH ) 
-	v_string = make_col_string(value, v_length, COL_WIDTH ) 
-	return("Hue: "+h_string+"Sat: "+s_string+"Val: "+ v_string)
+	v_string = make_col_string(value, v_length, COL_WIDTH )
+	f_string = make_col_string(f, f_length, COL_WIDTH) 
+	return("Wiggle: "+f_string)
+	# return("Hue: "+h_string+"Sat: "+s_string+"Val: "+ v_string)
 
 # Lookup colour names from HSV
 def estimate_colour(hue, saturation, value):
