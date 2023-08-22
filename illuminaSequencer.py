@@ -8,13 +8,9 @@ import time
 import cv2
 import math
 import sys
+from sequencing import *
 
 # constants
-CAMERA_FPS = 10
-IMAGE_WIDTH = 640
-IMAGE_HEIGHT = 480
-CENTER_RECT_SIZE = 50
-CENTER_RECT_HALF = CENTER_RECT_SIZE // 2
 LEFT_PANEL_WIDTH = 90
 
 # Convert colour into DNA base
@@ -37,15 +33,6 @@ def blast(dna):
 		return
 	print("Found matching species: MALLARD DUCK")
 
-# Estimate the colour under the sensor
-def estimate_colour(hue, saturation, value):
-	colour_name = "?"
-	colour_name = "red" if hue > 150 and saturation > 200 else colour_name
-	colour_name = "blue" if hue < 150 and saturation > 120 and value < 128 else colour_name
-	colour_name = "yellow" if hue < 80 and saturation > 200 else colour_name
-	colour_name = "black" if hue < 50 and saturation > 128 and value < 80 else colour_name
-	return(colour_name)
-
 def wait_for_user():
 	key = cv2.waitKey(-1) & 0xFF
 	# if the `q` key was pressed, exit the script
@@ -61,8 +48,6 @@ def wait_for_user():
 		fasta = ""
 		fastq = ""
 		sequence_number+=1
-		# os.system("clear")
-		# print("Resetting sequencer")
 
 	if key == ord('b'):
 		blast(fasta)
@@ -74,14 +59,27 @@ def make_sequence_panel(line):
 	seq_line = sequence_history[line] if len(sequence_history)>line else "|"
 	return(f'| {seq_num}:'.ljust(6)+seq_line.ljust(20) )
 
-# initialize the camera and grab a reference to the raw camera capture
-camera = PiCamera()
-camera.resolution = (IMAGE_WIDTH, IMAGE_HEIGHT)
-camera.framerate = CAMERA_FPS
-rawCapture = PiRGBArray(camera, size=(IMAGE_WIDTH, IMAGE_HEIGHT))
 
-# allow the camera to warmup
-time.sleep(1)
+def update_display():
+	print("\033[1;1H") # move cursor to top left
+	print(f'Measured colour: {colour_name}'.ljust(LEFT_PANEL_WIDTH)+"| History:")
+	print(f'Detected base  : {base}'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(0))
+	print(f'Base quality   : {qual} ({QUALITIES[qual]})'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(1))
+	print("".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(2))
+	print("Sequence so far:".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(3))
+	print("".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(4))
+	print(f'@SEQUENCE_{sequence_number}'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(5))
+	print(fasta.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(6))
+	print("+".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(7))
+	print(fastq.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(8))
+	print("".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(9))
+	print("Add new base to DNA and press 'n' to capture, 'r' to reset, or 'b' to BLAST")
+	print("".ljust(50))
+	print("".ljust(50))
+
+
+# initialize the camera and grab a reference to the raw camera capture
+camera, rawCapture = init_camera()
 
 os.system("clear")
 
@@ -111,7 +109,9 @@ while(True):
 	hue_sd, sat_sd, val_sd = sd_hsv
 
 	# Estimate colour
-	colour_name = estimate_colour(hue, saturation, value)
+	colour_estimate = estimate_colour(hue, saturation, value)
+	colour_name = colour_estimate["name"]
+	colour_dist = colour_estimate["dist"]
 
 	# Get base
 	base = BASES[colour_name]
@@ -121,21 +121,7 @@ while(True):
 	fastq += qual
 
 	# Update display
-	print("\033[1;1H") # move cursor to top left
-	print(f'Measured colour: {colour_name}'.ljust(LEFT_PANEL_WIDTH)+"| History:")
-	print(f'Detected base  : {base}'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(0))
-	print(f'Base quality   : {qual} ({QUALITIES[qual]})'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(1))
-	print("".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(2))
-	print("Sequence so far:".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(3))
-	print("".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(4))
-	print(f'@SEQUENCE_{sequence_number}'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(5))
-	print(fasta.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(6))
-	print("+".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(7))
-	print(fastq.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(8))
-	print("".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(9))
-	print("Add new base to DNA and press 'n' to capture, 'r' to reset, or 'b' to BLAST")
-	print("".ljust(50))
-	print("".ljust(50))
+	update_display(colour_name, base, qual)
 
 	# show the image frame
 	cv2.imshow("Frame", center_rect)

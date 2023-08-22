@@ -11,42 +11,18 @@ import time
 import cv2
 import math
 import sys
+from sequencing import *
 
 # constants
-CAMERA_FPS = 10
-IMAGE_WIDTH = 640
-IMAGE_HEIGHT = 480
-CENTER_RECT_SIZE = 50
-CENTER_RECT_HALF = CENTER_RECT_SIZE // 2
 COL_HEIGHT = 20 # height of a chart column
 CHART_WIDTH = 100 # width of chart
-
-# Define the ideal HSV levels for each colour
-# TODO - calibrate on startup
-RED = [170, 250, 250]
-YELLOW = [30, 90, 250]
-BLUE = [100, 250, 250]
-BLACK = [128, 70, 40]
-COLOURS = {"red":RED, "yellow":YELLOW, "blue":BLUE, "black":BLACK}
-
-# Map colour to DNA base
-BASES = {"red":"A", "blue":"T", "yellow":"C", "black":"G", "?":"N"}
 
 # Define the buffers
 IMAGE_BUFFER = collections.deque([], maxlen=8)
 CHART_BUFFER = collections.deque([0]*CHART_WIDTH, maxlen=CHART_WIDTH)
 SEQUENCE_BUFFER = collections.deque([]) # store the sequence of interest
 
-# initialize the camera and grab a reference to the raw camera capture
-def init_camera():
-	camera = PiCamera()
-	camera.resolution = (IMAGE_WIDTH, IMAGE_HEIGHT)
-	camera.framerate = CAMERA_FPS
-	rawCapture = PiRGBArray(camera, size=(IMAGE_WIDTH, IMAGE_HEIGHT))
-	
-	# allow the camera to warmup
-	time.sleep(1)
-	return camera, rawCapture
+
 
 # find the most common element of a collection
 def most_common(lst):
@@ -74,26 +50,8 @@ def make_display_string(hue, saturation, value, colour_dist, colour_name):
 		"\tDist: "+"{:5.1f}".format(colour_dist)+
 		"\tCol: "+colour_name.ljust(7))
 
-# Estimate colour names from HSV distance to ideal
-def estimate_colour(hue, saturation, value):
-	colour_name = "?"
-
-	# given a colour, calculate the distance from the current values
-	def calc_distance(colour):
-		return(abs(hue-colour[0])+abs(saturation-colour[1])+abs(value-colour[2]))
-
-	dd = 1e4
-	threshold = 40
-
-	for colour in COLOURS:
-		d = calc_distance(COLOURS[colour])
-		dd = d if d<threshold else dd
-		colour_name = colour if d<threshold else colour_name
-
-	return({"name":colour_name, "dist":dd})
-
 # Draw the current chart buffer
-def update_chart(base, chart_string):
+def update_display(base, chart_string):
 	print("\033[1;1H") # move cursor to top left
 	print("┌" + "─"*CHART_WIDTH + "┐")
 
@@ -151,7 +109,7 @@ def run_camera():
 		chart_string = make_display_string(hue, saturation, value, colour_dist, colour_name)
 
 		# Update chart
-		update_chart(base, chart_string)
+		update_display(base, chart_string)
 
 		# show the image frame
 		cv2.imshow("Frame", center_rect)
