@@ -121,9 +121,7 @@ while(True):
 	fastq += qual
 
 	# Update display
-	# os.system("clear")
-	print("\033[1;1H")
-	# print("\033[F*\033[F*\033[F*\033[F*\033[F*\033[F*\033[F*\033[F*\033[F*\033[F*\033[F*\033[F*\033[F*\r")
+	print("\033[1;1H") # move cursor to top left
 	print(f'Measured colour: {colour_name}'.ljust(LEFT_PANEL_WIDTH)+"| History:")
 	print(f'Detected base  : {base}'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(0))
 	print(f'Base quality   : {qual} ({QUALITIES[qual]})'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(1))

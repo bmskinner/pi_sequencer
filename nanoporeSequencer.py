@@ -4,9 +4,11 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 import collections
 import numpy as np
+import os
 import time
 import cv2
 import math
+import sys
 
 # constants
 CAMERA_FPS = 10
@@ -14,8 +16,8 @@ IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 480
 CENTER_RECT_SIZE = 50
 CENTER_RECT_HALF = CENTER_RECT_SIZE // 2
-COL_WIDTH = 30 # width of chart column
-DISPLAY_WIDTH = 45 # width of chart column plus trimmings
+COL_HEIGHT = 20 # height of a chart column
+CHART_WIDTH = 100 # width of chart
 
 # Define the ideal HSV levels for each colour
 RED = [170, 250, 250]
@@ -26,6 +28,10 @@ COLOURS = {"red":RED, "yellow":YELLOW, "blue":BLUE, "black":BLACK}
 
 # Map colour to DNA base
 BASES = {"red":"A", "blue":"T", "yellow":"C", "black":"G", "?":"N"}
+
+# Define the chart buffer
+CHART_BUFFER = collections.deque([0]*CHART_WIDTH, maxlen=CHART_WIDTH)
+SEQUENCE_BUFFER = "" # store the sequence of interest
 
 # initialize the camera and grab a reference to the raw camera capture
 camera = PiCamera()
@@ -45,19 +51,15 @@ def transform_hsv(h, s, v):
 	v = v+1
 	return(math.log(h*s) + math.log(s*v) + math.log(h*v) * math.log(h*s*v))
 
-# Create a text chart element
-def make_col_string(val, width, total_width):
-	s = "|" + f'{int(val)}'.rjust(3) + " "
-	for i in range(1, width):
-		s += "█"
-	return(s.ljust(DISPLAY_WIDTH))
-
 # Create a string for the current values
 def make_display_string(hue, saturation, value):
 	f = transform_hsv(hue, saturation, value)
-	f_length = math.floor((f/255)*COL_WIDTH)
-	f_string = make_col_string(f, f_length, COL_WIDTH) 
-	return("Wiggle:"+f_string+"\tHue: "+"{:5.0f}".format(hue)+"\tSat: "+"{:5.0f}".format(saturation)+"\tVal: "+ "{:5.0f}".format(value))
+	f_length = math.floor((f/255)*COL_HEIGHT)
+	CHART_BUFFER.append(f_length)
+	return("Current: "+"{:5.0f}".format(f)+
+		"\tHue: "+"{:5.0f}".format(hue)+
+		"\tSat: "+"{:5.0f}".format(saturation)+
+		"\tVal: "+ "{:5.0f}".format(value))
 
 # Estimate colour names from HSV distance to ideal
 def estimate_colour(hue, saturation, value):
@@ -77,8 +79,26 @@ def estimate_colour(hue, saturation, value):
 
 	return({"name":colour_name, "dist":dd})
 
+# Draw the current chart buffer
+def update_chart(base):
+	print("\033[1;1H") # move cursor to top left
+	print("┌" + "─"*CHART_WIDTH + "┐")
 
+	for i in range(1, COL_HEIGHT): # rows
+		print("│", end="") # begin line
+		for b in CHART_BUFFER: # columns
+			s = "█" if b >= COL_HEIGHT-i else " "
+			print(s, end="")
+		print("│", end="") # end line
+		if i == math.floor(COL_HEIGHT / 4):
+			print("\tBase: "+base)
+		else:
+			print("")
 
+	print("└" + "─"*CHART_WIDTH + "┘")
+	
+# Clear screen
+os.system("clear")
 
 # capture frames from the camera
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
@@ -107,9 +127,12 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 	# Get base
 	base = BASES[colour_name]
 
+
 	# Update chart
+	update_chart(base)
 	chart_string = make_display_string(hue, saturation, value)
-	print(chart_string, "\tDist: ","{:5.1f}".format(colour_dist), "\tCol: ", colour_name.ljust(7), "\tBase:", base)
+	print(chart_string, "\tDist: ","{:5.1f}".format(colour_dist), 
+		"\tCol: ", colour_name.ljust(7))
 
 	# show the image frame
 	cv2.imshow("Frame", center_rect)
