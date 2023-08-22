@@ -23,6 +23,21 @@ COLOURS = {"red":RED, "yellow":YELLOW, "blue":BLUE, "black":BLACK}
 # Map colour to DNA base
 BASES = {"red":"A", "blue":"T", "yellow":"C", "black":"G", "?":"N"}
 
+
+# !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+def dist_to_fastq(dist):
+	if dist < 5:
+		return("~")
+	if dist < 10:
+		return("u")
+	if dist < 20:
+		return("^")
+	if dist < 30: 
+		return("9")
+	if dist < 40:
+		return("*")
+	return("!")
+
 # Estimate colour names from HSV distance to ideal
 # Returns the colour and the distance from the ideal colour
 def estimate_colour(hue, saturation, value):

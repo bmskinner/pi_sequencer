@@ -115,10 +115,9 @@ while(True):
 
 	# Get base
 	base = BASES[colour_name]
-	qual = "!" if base=="N" else "~"
 
 	fasta += base
-	fastq += qual
+	fastq += dist_to_fastq(colour_dist)
 
 	# Update display
 	update_display(colour_name, base, qual)

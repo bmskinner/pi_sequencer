@@ -12,6 +12,7 @@ import cv2
 import math
 import sys
 from sequencing import *
+from statistics import mean 
 
 # constants
 COL_HEIGHT = 20 # height of a chart column
@@ -19,8 +20,10 @@ CHART_WIDTH = 100 # width of chart
 
 # Define the buffers
 IMAGE_BUFFER = collections.deque([], maxlen=8)
+DIST_BUFFER = collections.deque([], maxlen=8)
 CHART_BUFFER = collections.deque([0]*CHART_WIDTH, maxlen=CHART_WIDTH)
-SEQUENCE_BUFFER = collections.deque([]) # store the sequence of interest
+SEQUENCE_BUFFER = "" # store the sequence of interest
+QUALITY_BUFFER = ""
 
 
 
@@ -69,7 +72,11 @@ def update_display(base, chart_string):
 	print("└" + "─"*CHART_WIDTH + "┘")
 	print(chart_string)
 	print("")
-	print("".join(SEQUENCE_BUFFER))
+	print("\tCurrent sequence:")
+	print("\t@SEQUENCE_1")
+	print("\t"+SEQUENCE_BUFFER)
+	print("\t+")
+	print("\t"+QUALITY_BUFFER)
 	
 # Clear screen
 os.system("clear")
@@ -105,6 +112,7 @@ def run_camera():
 		base = BASES[colour_name]
 
 		IMAGE_BUFFER.append(base)
+		DIST_BUFFER.append(colour_dist)
 
 		chart_string = make_display_string(hue, saturation, value, colour_dist, colour_name)
 
@@ -132,8 +140,14 @@ def run_timer():
 		if len(IMAGE_BUFFER)>0:
 			base = most_common(IMAGE_BUFFER)
 			IMAGE_BUFFER.clear()
+			dist = mean(DIST_BUFFER)
+			DIST_BUFFER.clear()
+
 			global SEQUENCE_BUFFER
-			SEQUENCE_BUFFER.append(base)
+			SEQUENCE_BUFFER += base
+
+			global QUALITY_BUFFER
+			QUALITY_BUFFER += dist_to_fastq(dist)
 
 # Create a thread that continuously polls the camera and 
 # adds the found base to a rolling buffer and updates the chart
