@@ -74,9 +74,45 @@ def update_display(base, chart_string):
 	print("")
 	print("\tCurrent sequence:")
 	print("\t@SEQUENCE_1")
-	print("\t"+SEQUENCE_BUFFER)
+	print("\t"+SEQUENCE_BUFFER.ljust(110))
 	print("\t+")
-	print("\t"+QUALITY_BUFFER)
+	print("\t"+QUALITY_BUFFER.ljust(110))
+
+
+# Timer thread. Every n seconds, get
+# the most common base seen recently, clear the 
+# image buffer, update the sequence buffer
+def run_timer():
+	IMAGE_BUFFER.clear()
+	DIST_BUFFER.clear()
+	while(True):
+		time.sleep(1)
+		if len(IMAGE_BUFFER)>0:
+			base = most_common(IMAGE_BUFFER)
+			IMAGE_BUFFER.clear()
+			dist = mean(DIST_BUFFER)
+			DIST_BUFFER.clear()
+
+			global SEQUENCE_BUFFER
+			SEQUENCE_BUFFER += base
+
+			global QUALITY_BUFFER
+			QUALITY_BUFFER += dist_to_fastq(dist)
+
+def wait_for_user():
+	key = cv2.waitKey(2) & 0xFF
+	# if the `q` key was pressed, exit the script
+	if key == ord("q"):
+		cv2.destroyAllWindows()
+		sys.exit()
+	if key == ord("r"):
+		global SEQUENCE_BUFFER
+		global QUALITY_BUFFER
+		SEQUENCE_BUFFER = ""
+		QUALITY_BUFFER = ""
+	if key == ord("s"):
+		timer_thread = threading.Thread(target=run_timer)
+		timer_thread.start()
 	
 # Clear screen
 os.system("clear")
@@ -122,37 +158,14 @@ def run_camera():
 		# show the image frame
 		cv2.imshow("Frame", center_rect)
 
-		key = cv2.waitKey(1) & 0xFF
-		
-		# clear the stream in preparation for the next frame
 		rawCapture.truncate(0)
 
-		# if the `q` key was pressed, break from the loop
-		if key == ord("q"):
-			break
+		wait_for_user()
 
-# Timer thread. Every n seconds, get
-# the most common base seen recently, clear the 
-# image buffer, update the sequence buffer
-def run_timer():
-	while(True):
-		time.sleep(1)
-		if len(IMAGE_BUFFER)>0:
-			base = most_common(IMAGE_BUFFER)
-			IMAGE_BUFFER.clear()
-			dist = mean(DIST_BUFFER)
-			DIST_BUFFER.clear()
-
-			global SEQUENCE_BUFFER
-			SEQUENCE_BUFFER += base
-
-			global QUALITY_BUFFER
-			QUALITY_BUFFER += dist_to_fastq(dist)
 
 # Create a thread that continuously polls the camera and 
 # adds the found base to a rolling buffer and updates the chart
 cam_thread = threading.Thread(target=run_camera)
 cam_thread.start()
 
-timer_thread = threading.Thread(target=run_timer)
-timer_thread.start()
+
