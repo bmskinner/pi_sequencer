@@ -21,10 +21,10 @@ TERMINAL_WIDTH = 110 # max characters in the terminal
 
 # Define the buffers
 # Rolling image hsv
-IMAGE_BUFFER = collections.deque([], maxlen=8)
+IMAGE_BUFFER = collections.deque([], maxlen=4)
 
 # Rolling distances from nearest ideal colour
-DIST_BUFFER = collections.deque([], maxlen=8)
+DIST_BUFFER = collections.deque([], maxlen=4)
 
 # Chart values
 CHART_BUFFER = collections.deque([0]*CHART_WIDTH, maxlen=CHART_WIDTH)
@@ -106,15 +106,15 @@ def run_timer():
 	clear_buffers()
 
 	while(IS_TIMER_RUNNING):
-		time.sleep(2)
+		time.sleep(0.5)
 		if len(IMAGE_BUFFER)==0:
 			continue
 
 		# Allow colours to normalise
-		sd_dist = stdev(DIST_BUFFER.copy()) # copy to avoid mutation by cam thread
-		while(sd_dist>20):
-			time.sleep(0.1)
-			sd_dist = stdev(DIST_BUFFER.copy())
+		# sd_dist = stdev(DIST_BUFFER.copy()) # copy to avoid mutation by cam thread
+		# while(sd_dist>20):
+		# 	time.sleep(0.1)
+		# 	sd_dist = stdev(DIST_BUFFER.copy())
 
 		a_h = []
 		a_s = []
