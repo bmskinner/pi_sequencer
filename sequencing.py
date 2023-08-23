@@ -35,16 +35,16 @@ BASES = {"red":"A", "blue":"C", "yellow":"T", "grey":"G", "?":"N"}
 # !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 def dist_to_fastq(dist):
 	if dist < 5:
-		return("🤩") # ~ 
+		return("8")
 	if dist < 10:
-		return("😀") # u
+		return("6")
 	if dist < 20:
-		return("🙂") # ^
+		return("4")
 	if dist < 30: 
-		return("😐") # 9
-	if dist < 50:
-		return("☹️") # *
-	return("!") # !
+		return("2")
+	if dist < 40:
+		return(".")
+	return("!")
 
 # Estimate colour names from HSV distance to ideal
 # Returns the colour and the distance from the ideal colour
