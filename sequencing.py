@@ -1,9 +1,16 @@
 # common functions
 from picamera.array import PiRGBArray
 from picamera import PiCamera
+import threading
 import collections
-import math
+import queue
+import numpy as np
+import os
 import time
+import cv2
+import math
+import sys
+from statistics import mean 
 
 # Camera constants
 CAMERA_FPS = 10
@@ -28,16 +35,16 @@ BASES = {"red":"A", "blue":"C", "yellow":"T", "grey":"G", "?":"N"}
 # !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 def dist_to_fastq(dist):
 	if dist < 5:
-		return("~")
+		return("🤩") # ~ 
 	if dist < 10:
-		return("u")
+		return("😀") # u
 	if dist < 20:
-		return("^")
+		return("🙂") # ^
 	if dist < 30: 
-		return("9")
-	if dist < 40:
-		return("*")
-	return("!")
+		return("😐") # 9
+	if dist < 50:
+		return("☹️") # *
+	return("!") # !
 
 # Estimate colour names from HSV distance to ideal
 # Returns the colour and the distance from the ideal colour
@@ -69,3 +76,55 @@ def init_camera():
 	# allow the camera to warmup
 	time.sleep(1)
 	return camera, rawCapture
+
+
+def get_centre_rectangle(frame):
+	# grab the raw NumPy array representing the image
+	image = frame.array
+
+	# Crop the center rectangle
+	center_x = IMAGE_WIDTH // 2
+	center_y = IMAGE_HEIGHT // 2
+	center_rect = image[center_y - CENTER_RECT_HALF:center_y + CENTER_RECT_HALF,
+						center_x - CENTER_RECT_HALF:center_x + CENTER_RECT_HALF]
+	return(center_rect)
+
+def get_mean_hsv(center_rect):
+	# Convert to HSV for processing
+	center_rect_hsv = cv2.cvtColor(center_rect, cv2.COLOR_BGR2HSV)
+	avg_hsv = np.mean(center_rect_hsv, axis=(0, 1))
+	return(avg_hsv)
+
+# Play the video until 'n' is pressed
+def play_camera_video(camera, rawCapture):
+	for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+		center_rect = get_centre_rectangle(frame)
+		cv2.imshow("Frame", center_rect)
+		rawCapture.truncate(0)
+		key = cv2.waitKey(2) & 0xFF
+		if key == ord('n'):
+			return()
+
+
+def calibrate_camera(camera, rawCapture):
+	global COLOURS
+	print("Calibrating...")
+
+	def calibrate_colour(colour):
+		print(f'Show me a {colour} and press n')
+		play_camera_video(camera, rawCapture)
+
+		camera.capture(rawCapture, format="bgr", use_video_port=True)
+		center_rect = get_centre_rectangle(rawCapture)
+		avg_hsv = get_mean_hsv(center_rect)
+		cv2.imshow("Frame", center_rect)
+		COLOURS[colour] = avg_hsv
+		rawCapture.truncate(0)
+		print(COLOURS[colour])
+
+	for col in COLOURS:
+		calibrate_colour(col)
+
+	print("Calibration complete!")
+	time.sleep(1)
+	os.system("clear")

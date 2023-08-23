@@ -62,7 +62,7 @@ def make_info_string(hue, saturation, value, colour_dist, colour_name):
 def update_display(base, chart_string):
 	print("\033[1;1H") # move cursor to top left
 	print("")
-	print("\t\t\t\tLEGO NANOPORE SEQUENCER")
+	print("\t\t\t\t\tLEGO NANOPORE SEQUENCER")
 	print("")
 	print("┌" + "─"*CHART_WIDTH + "┐")
 
@@ -174,24 +174,16 @@ sys.stdout.write("\033[?25l") #  turn off cursor blinking
 
 camera, rawCapture = init_camera()
 
+calibrate_camera(camera, rawCapture)
+
 # capture frames from the camera
 def run_camera():
 	for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-		# grab the raw NumPy array representing the image
-		image = frame.array
 
-		# Crop the center rectangle
-		center_x = IMAGE_WIDTH // 2
-		center_y = IMAGE_HEIGHT // 2
-		center_rect = image[center_y - CENTER_RECT_HALF:center_y + CENTER_RECT_HALF,
-							center_x - CENTER_RECT_HALF:center_x + CENTER_RECT_HALF]
+		center_rect = get_centre_rectangle(frame)
 
+		avg_hsv = get_mean_hsv(center_rect)
 
-		# Convert to HSV for processing
-		center_rect_hsv = cv2.cvtColor(center_rect, cv2.COLOR_BGR2HSV)
-		
-		# Calculate the mean HSV values
-		avg_hsv = np.mean(center_rect_hsv, axis=(0, 1))
 		hue, saturation, value = avg_hsv
 
 		# Estimate colour
@@ -219,7 +211,8 @@ def run_camera():
 
 
 # Create a thread that continuously polls the camera and 
-# adds the found base to a rolling buffer and updates the chart
+# adds the image values to a rolling buffer. Also updates
+# the display
 cam_thread = threading.Thread(target=run_camera)
 cam_thread.start()
 

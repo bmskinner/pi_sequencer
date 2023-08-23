@@ -62,6 +62,9 @@ def make_sequence_panel(line):
 
 def update_display():
 	print("\033[1;1H") # move cursor to top left
+	print("")
+	print("\t\t\t\t\tLEGO ILLUMINA SEQUENCER")
+	print("")
 	print(f'Measured colour: {colour_name}'.ljust(LEFT_PANEL_WIDTH)+"| History:")
 	print(f'Detected base  : {base}'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(0))
 	print(f'Base quality   : {qual} ({QUALITIES[qual]})'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(1))
@@ -81,6 +84,8 @@ def update_display():
 # initialize the camera and grab a reference to the raw camera capture
 camera, rawCapture = init_camera()
 
+calibrate_camera(camera, rawCapture)
+
 os.system("clear")
 
 while(True):
@@ -88,21 +93,9 @@ while(True):
 	# Snap an image
 	camera.capture(rawCapture, format="bgr", use_video_port=True)
 
-	# grab the raw NumPy array representing the image
-	image = rawCapture.array
+	center_rect = get_centre_rectangle(rawCapture)
 
-	# Crop the center rectangle
-	center_x = IMAGE_WIDTH // 2
-	center_y = IMAGE_HEIGHT // 2
-	center_rect = image[center_y - CENTER_RECT_HALF:center_y + CENTER_RECT_HALF,
-						center_x - CENTER_RECT_HALF:center_x + CENTER_RECT_HALF]
-
-
-	# Convert to HSV for processing
-	center_rect_hsv = cv2.cvtColor(center_rect, cv2.COLOR_BGR2HSV)
-	
-	# Calculate the mean HSV values
-	avg_hsv = np.mean(center_rect_hsv, axis=(0, 1))
+	avg_hsv = get_mean_hsv(center_rect)
 	hue, saturation, value = avg_hsv
 
 	sd_hsv = np.std(center_rect_hsv, axis=(0, 1))
