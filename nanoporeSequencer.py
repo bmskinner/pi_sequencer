@@ -12,7 +12,7 @@ import cv2
 import math
 import sys
 from sequencing import *
-from statistics import mean 
+from statistics import mean, stdev
 
 # Chart constants
 COL_HEIGHT = 20 # height of a chart column
@@ -106,32 +106,38 @@ def run_timer():
 	clear_buffers()
 
 	while(IS_TIMER_RUNNING):
-		time.sleep(1)
-		if len(IMAGE_BUFFER)>0:
-			a_h = []
-			a_s = []
-			a_v = []
-			for avg_hsv in IMAGE_BUFFER:
-				h, s, v = avg_hsv
-				a_h.append(h)
-				a_s.append(s)
-				a_v.append(v)
+		time.sleep(2)
+		if len(IMAGE_BUFFER)==0:
+			continue
 
-			m_h = mean(a_h)
-			m_s = mean(a_s)
-			m_v = mean(a_v)
+		# Allow colours to normalise
+		sd_dist = stdev(DIST_BUFFER.copy()) # copy to avoid mutation by cam thread
+		while(sd_dist>20):
+			time.sleep(0.1)
+			sd_dist = stdev(DIST_BUFFER.copy())
 
-			base_estimate = estimate_colour(m_h, m_s, m_v)
-			colour_name = base_estimate["name"]
-			colour_dist = base_estimate["dist"]
-			base = BASES[colour_name]
+		a_h = []
+		a_s = []
+		a_v = []
+		for avg_hsv in IMAGE_BUFFER:
+			h, s, v = avg_hsv
+			a_h.append(h)
+			a_s.append(s)
+			a_v.append(v)
 
-			# base = most_common(IMAGE_BUFFER)
-			IMAGE_BUFFER.clear()
-			# dist = mean(DIST_BUFFER)
-			DIST_BUFFER.clear()
-			SEQUENCE_BUFFER += base
-			QUALITY_BUFFER += dist_to_fastq(colour_dist)
+		m_h = mean(a_h)
+		m_s = mean(a_s)
+		m_v = mean(a_v)
+
+		base_estimate = estimate_colour(m_h, m_s, m_v)
+		colour_name = base_estimate["name"]
+		colour_dist = base_estimate["dist"]
+		base = BASES[colour_name]
+
+		IMAGE_BUFFER.clear()
+		DIST_BUFFER.clear()
+		SEQUENCE_BUFFER += base
+		QUALITY_BUFFER += dist_to_fastq(colour_dist)
 
 # Clear the buffers ready for a new 
 # sequence capture
@@ -148,10 +154,12 @@ def clear_buffers():
 
 def wait_for_user():
 	global IS_TIMER_RUNNING
+	global file_err
 	key = cv2.waitKey(2) & 0xFF
 
 	# if the `q` key was pressed, exit the script
 	if key == ord("q"):
+		file_err.close()
 		cv2.destroyAllWindows()
 		sys.exit()
 
@@ -171,6 +179,10 @@ def wait_for_user():
 # Clear screen
 os.system("clear")
 sys.stdout.write("\033[?25l") #  turn off cursor blinking
+
+original_stderr = sys.stderr
+file_err = open('nanopore.log', 'w')
+sys.stderr = file_err
 
 camera, rawCapture = init_camera()
 
