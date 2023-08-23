@@ -14,14 +14,15 @@ CENTER_RECT_HALF = CENTER_RECT_SIZE // 2
 
 # Define the ideal HSV levels for each colour
 # TODO - calibrate on startup
-RED = [170, 250, 250]
-YELLOW = [30, 90, 250]
-BLUE = [100, 250, 250]
-BLACK = [128, 70, 40]
-COLOURS = {"red":RED, "yellow":YELLOW, "blue":BLUE, "black":BLACK}
+COLOURS = {
+	"red":[170, 250, 250], 
+	"yellow":[30, 90, 250], 
+	"blue":[100, 250, 250], 
+	"grey":[115, 15, 160]
+}
 
 # Map colour to DNA base
-BASES = {"red":"A", "blue":"T", "yellow":"C", "black":"G", "?":"N"}
+BASES = {"red":"A", "blue":"C", "yellow":"T", "grey":"G", "?":"N"}
 
 
 # !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
@@ -48,7 +49,7 @@ def estimate_colour(hue, saturation, value):
 		return(abs(hue-colour[0])+abs(saturation-colour[1])+abs(value-colour[2]))
 
 	dd = 1e3
-	threshold = 40
+	threshold = 60
 
 	for colour in COLOURS:
 		d = calc_distance(COLOURS[colour])
