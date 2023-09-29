@@ -13,10 +13,6 @@ from sequencing import *
 # constants
 LEFT_PANEL_WIDTH = 90
 
-# Convert colour into DNA base
-BASES = {"red":"A", "blue":"T", "yellow":"C", "black":"G", "?":"N"}
-QUALITIES = {"!":"Could not identify base", "~":"Very confident"}
-
 # Global variables for sequencing
 fasta = ""
 fastq = ""
@@ -33,15 +29,15 @@ def blast(dna):
 		return
 	print("Found matching species: MALLARD DUCK")
 
-def wait_for_user():
+def wait_for_user(base, qual):
+	global fasta
+	global fastq
 	key = cv2.waitKey(-1) & 0xFF
 	# if the `q` key was pressed, exit the script
 	if key == ord("q"):
 		cv2.destroyAllWindows()
 		sys.exit()
 	if key == ord("r"):
-		global fasta
-		global fastq
 		global sequence_number
 		global sequence_history
 		sequence_history.append(fasta)
@@ -49,36 +45,47 @@ def wait_for_user():
 		fastq = ""
 		sequence_number+=1
 
+	if(key == ord("c")):
+		fasta += base
+		fastq += qual
+
 	if key == ord('b'):
 		blast(fasta)
-		wait_for_user()
+		wait_for_user(base, qual)
 
 
-def make_sequence_panel(line):
-	seq_num = line if len(sequence_history)<10 else sequence_number-(10-line)
-	seq_line = sequence_history[line] if len(sequence_history)>line else "|"
-	return(f'| {seq_num}:'.ljust(6)+seq_line.ljust(20) )
+def make_sequence_history_line(index):
+	seq_num = index if len(sequence_history)<10 else sequence_number-(10-index)
+	seq_line = sequence_history[index] if len(sequence_history)>index else ""
+	return(f'{seq_num}:'.ljust(6)+seq_line.ljust(20) )
 
+# right pad a line of text for display
+def make_display_line(text):
+	return(text.ljust(LEFT_PANEL_WIDTH))
 
 def update_display():
 	print("\033[1;1H") # move cursor to top left
-	print("")
-	print("\t\t\t\t\tLEGO ILLUMINA SEQUENCER")
-	print("")
-	print(f'Measured colour: {colour_name}'.ljust(LEFT_PANEL_WIDTH)+"| History:")
-	print(f'Detected base  : {base}'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(0))
-	print(f'Base quality   : {qual} ({QUALITIES[qual]})'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(1))
-	print("".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(2))
-	print("Sequence so far:".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(3))
-	print("".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(4))
-	print(f'@SEQUENCE_{sequence_number}'.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(5))
-	print(fasta.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(6))
-	print("+".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(7))
-	print(fastq.ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(8))
-	print("".ljust(LEFT_PANEL_WIDTH)+make_sequence_panel(9))
-	print("Add new base to DNA and press 'n' to capture, 'r' to reset, or 'b' to BLAST")
-	print("".ljust(50))
-	print("".ljust(50))
+	print(make_display_line(""))
+	print(make_display_line("\t\t\t\t\tLEGO ILLUMINA SEQUENCER"))
+	print(make_display_line(""))
+	print(make_display_line(f'Measured colour: {colour_name}'))
+	print(make_display_line(f'Detected base  : {base}'))
+	print(make_display_line(""))
+	print(make_display_line("Sequence so far:"))
+	print(make_display_line(""))
+	print(make_display_line(f'@SEQUENCE_{sequence_number}'))
+	print(make_display_line(fasta))
+	print(make_display_line("+"))
+	print(make_display_line(fastq))
+	print(make_display_line(""))
+	print(make_display_line("Press 'c' to capture this base, 'n' to take a new image, 'r' to reset, or 'b' to BLAST"))
+	print(make_display_line(""))
+	print(make_display_line(""))
+	print(make_display_line("Sequence history:"))
+	for i in range(0, 9):
+		print(make_sequence_history_line(i))
+	print(make_display_line(""))
+	print(make_display_line(""))
 
 
 # initialize the camera and grab a reference to the raw camera capture
@@ -98,22 +105,14 @@ while(True):
 	avg_hsv = get_mean_hsv(center_rect)
 	hue, saturation, value = avg_hsv
 
-	sd_hsv = np.std(center_rect_hsv, axis=(0, 1))
-	hue_sd, sat_sd, val_sd = sd_hsv
-
 	# Estimate colour
 	colour_estimate = estimate_colour(hue, saturation, value)
 	colour_name = colour_estimate["name"]
 	colour_dist = colour_estimate["dist"]
 
-	# Get base
+	# Get base and quality
 	base = BASES[colour_name]
-
-	fasta += base
-	fastq += dist_to_fastq(colour_dist)
-
-	# Update display
-	update_display(colour_name, base, qual)
+	qual = dist_to_fastq(colour_dist)
 
 	# show the image frame
 	cv2.imshow("Frame", center_rect)
@@ -121,5 +120,8 @@ while(True):
 	# clear the stream in preparation for the next frame
 	rawCapture.truncate(0)
 
-	# wait for key press
-	wait_for_user()
+	# Update display
+	update_display()
+
+	# wait for key press - do we add this base to the sequence?
+	wait_for_user(base, qual)
