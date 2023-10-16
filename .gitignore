@@ -1,0 +1,8 @@
+# Specify filepatterns you want git to ignore.
+
+.spyproject/*
+.Rproj.user
+
+.Rdata
+.Rhistory
+*.Rproj
