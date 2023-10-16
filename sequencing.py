@@ -28,10 +28,11 @@ COLOURS = {
 	"grey":[115, 15, 160]
 }
 
-# Map colour to DNA base
-BASES = {"red":"A", "blue":"C", "yellow":"T", "grey":"G", "?":"N"}
+# Map colour to DNA bases
+BASES = {"red":"A", "blue":"C", "yellow":"G", "grey":"T", "?":"N"}
 
 
+# Define pseudo-FASTQ levels. The canonical scale is:
 # !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 def dist_to_fastq(dist):
 	if dist < 5:
@@ -106,6 +107,8 @@ def play_camera_video(camera, rawCapture):
 			return()
 
 
+# Get a reading of the HSV values for each brick to
+# protect against lighting changes
 def calibrate_camera(camera, rawCapture):
 	global COLOURS
 	print("Calibrating...")
