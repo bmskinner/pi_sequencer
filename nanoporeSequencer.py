@@ -152,6 +152,20 @@ def clear_buffers():
 	QUALITY_BUFFER = ""
 
 
+# Clear screen
+os.system("clear")
+sys.stdout.write("\033[?25l") #  turn off cursor blinking
+
+# Direct errors to log file
+original_stderr = sys.stderr
+file_err = open('nanopore.log', 'w')
+sys.stderr = file_err
+
+# Set up the camera
+camera, rawCapture = init_camera()
+calibrate_camera(camera, rawCapture)
+
+# Handle user input
 def wait_for_user():
 	global IS_TIMER_RUNNING
 	global file_err
@@ -176,17 +190,6 @@ def wait_for_user():
 			timer_thread = threading.Thread(target=run_timer)
 			timer_thread.start()
 	
-# Clear screen
-os.system("clear")
-sys.stdout.write("\033[?25l") #  turn off cursor blinking
-
-original_stderr = sys.stderr
-file_err = open('nanopore.log', 'w')
-sys.stderr = file_err
-
-camera, rawCapture = init_camera()
-
-calibrate_camera(camera, rawCapture)
 
 # capture frames from the camera
 def run_camera():

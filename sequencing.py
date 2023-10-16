@@ -16,7 +16,7 @@ from statistics import mean
 CAMERA_FPS = 10
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 480
-CENTER_RECT_SIZE = 50
+CENTER_RECT_SIZE = 25
 CENTER_RECT_HALF = CENTER_RECT_SIZE // 2
 
 # Define the ideal HSV levels for each colour
@@ -111,6 +111,7 @@ def play_camera_video(camera, rawCapture):
 # protect against lighting changes
 def calibrate_camera(camera, rawCapture):
 	global COLOURS
+	os.system("clear")
 	print("Calibrating...")
 
 	def calibrate_colour(colour):

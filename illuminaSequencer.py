@@ -20,6 +20,11 @@ sequence_number = 1
 
 sequence_history = collections.deque([], maxlen=10)
 
+# initialize the camera and grab a reference to the raw camera capture
+camera, rawCapture = init_camera()
+
+calibrate_camera(camera, rawCapture)
+
 # Blast a given sequence
 def blast(dna):
 	print("Searching for matching DNA...")
@@ -53,7 +58,6 @@ def wait_for_user(base, qual):
 		blast(fasta)
 		wait_for_user(base, qual)
 
-
 def make_sequence_history_line(index):
 	seq_num = index if len(sequence_history)<10 else sequence_number-(10-index)
 	seq_line = sequence_history[index] if len(sequence_history)>index else ""
@@ -78,7 +82,7 @@ def update_display():
 	print(make_display_line("+"))
 	print(make_display_line(fastq))
 	print(make_display_line(""))
-	print(make_display_line("Press 'c' to capture this base, 'n' to take a new image, 'r' to reset, or 'b' to BLAST"))
+	print(make_display_line("Controls:\t[c]apture base\t[n]ew image\t[r]eset\t[b]last\t[q]uit")
 	print(make_display_line(""))
 	print(make_display_line(""))
 	print(make_display_line("Sequence history:"))
@@ -87,11 +91,6 @@ def update_display():
 	print(make_display_line(""))
 	print(make_display_line(""))
 
-
-# initialize the camera and grab a reference to the raw camera capture
-camera, rawCapture = init_camera()
-
-calibrate_camera(camera, rawCapture)
 
 os.system("clear")
 
