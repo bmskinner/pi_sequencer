@@ -21,13 +21,14 @@ TERMINAL_WIDTH = 110 # max characters in the terminal
 
 # Define the buffers
 # Rolling image hsv
-IMAGE_BUFFER = collections.deque([], maxlen=4)
+IMAGE_BUFFER = collections.deque([], maxlen=1)
 
 # Rolling distances from nearest ideal colour
-DIST_BUFFER = collections.deque([], maxlen=4)
+DIST_BUFFER = collections.deque([], maxlen=1)
 
 # Chart values
 CHART_BUFFER = collections.deque([0]*CHART_WIDTH, maxlen=CHART_WIDTH)
+MAX_F = 0
 
 # Current sequence and quality
 SEQUENCE_BUFFER = "" # store the sequence of interest
@@ -44,12 +45,17 @@ def transform_hsv(h, s, v):
 	h = h+1
 	s = s+1
 	v = v+1
-	return(math.log(h*s) + math.log(s*v) + math.log(h*v) * math.log(h*s*v))
+	wiggle = math.log(h*s) + math.log(s*v) + math.log(h*v) * math.log(h*s*v) # pseudo current wiggle value
+	return(wiggle - 50) # clip the constant region for more dynamic chart
 
 # Create a string for the current values
 def make_info_string(hue, saturation, value, colour_dist, colour_name):
-	f = transform_hsv(hue, saturation, value)
-	f_length = math.floor((f/255)*COL_HEIGHT)
+	global MAX_F
+	f = transform_hsv(hue, saturation, value) # raw value
+	if(f>MAX_F):
+		MAX_F = f
+
+	f_length = math.floor((f/150)*COL_HEIGHT) # how many terminal rows chart fills
 	CHART_BUFFER.append(f_length)
 	return("Current: "+"{:5.0f}".format(f)+
 		"\tHue: "+"{:5.0f}".format(hue)+
@@ -66,14 +72,14 @@ def update_display(base, chart_string):
 	print("")
 	print("┌" + "─"*CHART_WIDTH + "┐")
 
-	for i in range(1, COL_HEIGHT): # rows
+	for i in range(1, COL_HEIGHT): # terminal rows in chart
 		print("│", end="") # begin line
 		for b in CHART_BUFFER: # columns
 			s = "█" if b >= COL_HEIGHT-i else " "
 			print(s, end="")
 		print("│", end="") # end line
 		if i == math.floor(COL_HEIGHT / 4):
-			print("\tBase: "+base)
+			print("\tBase: "+base) #+"\t"+"Max F: "+str(MAX_F)
 		else:
 			print("")
 
@@ -110,12 +116,6 @@ def run_timer():
 		if len(IMAGE_BUFFER)==0:
 			continue
 
-		# Allow colours to normalise
-		# sd_dist = stdev(DIST_BUFFER.copy()) # copy to avoid mutation by cam thread
-		# while(sd_dist>20):
-		# 	time.sleep(0.1)
-		# 	sd_dist = stdev(DIST_BUFFER.copy())
-
 		a_h = []
 		a_s = []
 		a_v = []
@@ -133,6 +133,7 @@ def run_timer():
 		colour_name = base_estimate["name"]
 		colour_dist = base_estimate["dist"]
 		base = BASES[colour_name]
+
 
 		IMAGE_BUFFER.clear()
 		DIST_BUFFER.clear()
@@ -208,9 +209,9 @@ def run_camera():
 		colour_dist = colour_estimate["dist"]
 		# Get base
 		base = BASES[colour_name]
-
-		IMAGE_BUFFER.append(avg_hsv)
-		DIST_BUFFER.append(colour_dist)
+		if(base!="N"): # ignore poor base calls for now
+			IMAGE_BUFFER.append(avg_hsv)
+			DIST_BUFFER.append(colour_dist)
 
 		chart_string = make_info_string(hue, saturation, value, colour_dist, colour_name)
 

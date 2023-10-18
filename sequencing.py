@@ -13,7 +13,7 @@ import sys
 from statistics import mean 
 
 # Camera constants
-CAMERA_FPS = 10
+CAMERA_FPS = 4
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 480
 CENTER_RECT_SIZE = 25
