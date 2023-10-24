@@ -29,10 +29,17 @@ calibrate_camera(camera, rawCapture)
 def blast(dna):
 	print("Searching for matching DNA...")
 	time.sleep(1)
-	if len(dna)<10:
+	if len(dna)<5:
 		print("Sequence is too short!")
 		return
-	print("Found matching species: MALLARD DUCK")
+	if(dna == "CCTTGGT"):
+		return "Match found: cattle COI (cytochrome c oxidase subunit I)"
+	if(dna == "TCATACT"):
+		return "Match found: horse COI (cytochrome c oxidase subunit I)"
+	if(dna == "TTAGGGT"):
+		return "Match found: vertebrate telomere"
+
+	return "No matches found."
 
 def wait_for_user(base, qual):
 	global fasta
@@ -49,13 +56,15 @@ def wait_for_user(base, qual):
 		fasta = ""
 		fastq = ""
 		sequence_number+=1
+		os.system("clear") # clear out blast results
+		update_display() # redraw UI
 
 	if(key == ord("c")):
 		fasta += base
 		fastq += qual
 
 	if key == ord('b'):
-		blast(fasta)
+		print(make_display_line(blast(fasta)))
 		wait_for_user(base, qual)
 
 def make_sequence_history_line(index):
@@ -82,15 +91,13 @@ def update_display():
 	print(make_display_line("+"))
 	print(make_display_line(fastq))
 	print(make_display_line(""))
-	print(make_display_line("Controls:\t[c]apture base\t[n]ew image\t[r]eset\t[b]last\t[q]uit")
+	print(make_display_line("Controls:\t[n]ew image\t[c]apture base\t[r]eset\t[b]last\t[q]uit"))
 	print(make_display_line(""))
 	print(make_display_line(""))
 	print(make_display_line("Sequence history:"))
-	for i in range(0, 9):
+	for i in range(0, 10):
 		print(make_sequence_history_line(i))
 	print(make_display_line(""))
-	print(make_display_line(""))
-
 
 os.system("clear")
 
